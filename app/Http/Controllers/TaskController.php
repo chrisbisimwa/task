@@ -23,7 +23,7 @@ class TaskController extends Controller
 
         $tasks = Task::search($search)
             ->latest()
-            ->paginate(5)
+            ->paginate(10)
             ->withQueryString();
 
         return view('app.tasks.index', compact('tasks', 'search'));
