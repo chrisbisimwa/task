@@ -43,7 +43,7 @@
             @foreach($tasks as $task)
                 <div class="card mb-3 task-card">
                     <div class="card-body">
-                        <h5 class="card-title">{{ $task->title }}</h5>
+                        <h5 class="card-title">{{ $task->name }}</h5>
                         <p class="card-text text-muted">{{ $task->description }}</p>
                         <div class="mb-2">Statut actuel : <strong>{{ ucfirst($task->status) }}</strong></div>
 
