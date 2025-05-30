@@ -9,6 +9,16 @@
     <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('assets/favicon/favicon-32x32.png') }}">
     <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('assets/favicon/apple-touch-icon.png') }}">
 
+    <meta name="og:title" content="Suivi des Tâches - {{ $employee->name }}">
+    <meta name="og:description" content="Mise à jour des tâches de la semaine pour {{ $employee->name }}. Suivez l'avancement et gérez les tâches en cours.">
+    <meta name="og:image" content="{{ asset('assets/favicon/favicon-32x32.png') }}">
+    <meta name="og:url" content="{{ url()->current() }}">
+    <meta name="og:type" content="website">
+    <meta name="og:site_name" content="Suivi des Tâches">
+    <meta name="og:locale" content="fr_FR">
+    <meta name="og:locale:alternate" content="en_US">
+    
+
     <!-- Bootstrap 5 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Sortable.js -->
