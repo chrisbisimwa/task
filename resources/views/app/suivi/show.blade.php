@@ -60,7 +60,7 @@
     <div class="container py-4">
         <div class="text-center mb-4">
             <h2>Bonjour {{ $employee->name }}</h2>
-            <p class="text-muted">Tâches de la semaine {{ $currentWeek }}</p>
+            <p class="text-muted">Tâches de la semaine {{ $currentWeek }} ({{$weekStart}} - {{$weekEnd}})</p>
         </div>
 
         @if (session('success'))

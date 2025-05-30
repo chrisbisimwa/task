@@ -22,6 +22,15 @@ class SuiviController extends Controller
         $startOfWeek = Carbon::now()->startOfWeek(); // lundi
         $endOfWeek = Carbon::now()->endOfWeek();     // dimanche
 
+
+        // startOfWeek (Lundi 26 Février 2024) en français
+        $startOfWeek->locale('fr'); // Assurez-vous que la locale est définie sur 'fr'
+        $weekStart = $startOfWeek->format('l d/m/Y');
+        // endOfWeek (Dimanche 3 Mars 2024)
+        $endOfWeek->locale('fr'); // Assurez-vous que la locale est définie sur 'fr'
+        $weekEnd = $endOfWeek->format('l d/m/Y');
+
+
         $yearWeek = now()->format('o-\WW');
 
         $currentWeek = now()->weekOfYear;
@@ -37,7 +46,7 @@ class SuiviController extends Controller
             ->where('due_week', $yearWeek)
             ->get();
 
-        return view('app.suivi.show', compact('access', 'tasks', 'employee', 'startOfWeek', 'endOfWeek', 'currentWeek'));
+        return view('app.suivi.show', compact('access', 'tasks', 'employee', 'weekStart', 'weekEnd', 'currentWeek'));
     }
 
     public function update(Request $request, $token)
