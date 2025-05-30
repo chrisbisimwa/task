@@ -33,7 +33,7 @@ class SuiviController extends Controller
         }
 
         $tasks = Task::where('employee_id', $access->employee_id)
-            ->whereNotIn('status', ['done'])
+            /* ->whereNotIn('status', ['done']) */
             ->where('due_week', $yearWeek)
             ->get();
 
@@ -59,35 +59,49 @@ class SuiviController extends Controller
 
     public function submit(Request $request, $token)
     {
-        // Récupération du token
-        $accessToken = AccessToken::where('token', $token)
+        //$access = AccessToken::where('token', $token)->first();
+        $access = AccessToken::where('token', $token)
             ->where('expires_at', '>', Carbon::now())
             ->firstOrFail();
 
-        $employee = $accessToken->employee;
+        if (! $access) {
+            return redirect()->back()->with('error', 'Lien expiré ou invalide.');
+        }
+       
 
-        // Validation des données entrantes
-        $validated = $request->validate([
-            'statuses' => 'required|array',
-            'statuses.*' => 'in:done,pending,in_progress',
-        ]);
+       /*  if (! $access || $access->isValid()) {
+            return redirect()->back()->with('error', 'Lien expiré ou invalide.');
+        } */
 
-        // Mise à jour des statuts
-        DB::transaction(function () use ($validated, $employee) {
-            foreach ($validated['statuses'] as $taskId => $status) {
-                $task = Task::where('id', $taskId)
-                    ->where('employee_id', $employee->id)
-                    ->first();
+        // Décoder le JSON des statuts mis à jour
+        $updates = json_decode($request->input('statuses'), true);
 
-                if ($task) {
-                    $task->status = $status;
+        if (! is_array($updates)) {
+            return redirect()->back()->with('error', 'Données de statut invalides.');
+        }
+
+        // Vérifier que les tâches appartiennent bien à l'employé
+        $taskIds = array_keys($updates);
+        $tasks = Task::whereIn('id', $taskIds)
+            ->where('employee_id', $access->employee_id)
+            ->get();
+
+        // Appliquer les mises à jour
+        DB::beginTransaction();
+        try {
+            foreach ($tasks as $task) {
+                $newStatus = $updates[$task->id];
+                if (in_array($newStatus, ['done', 'in_progress', 'pending'])) {
+                    $task->status = $newStatus;
                     $task->save();
                 }
             }
-        });
+            DB::commit();
 
-        return redirect()
-            ->route('suivi.show', $token)
-            ->with('success', '✅ Les statuts de vos tâches ont bien été mis à jour.');
+            return redirect()->back()->with('success', 'Mise à jour des statuts effectuée avec succès !');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->with('error', 'Une erreur est survenue lors de la mise à jour.');
+        }
     }
 }
