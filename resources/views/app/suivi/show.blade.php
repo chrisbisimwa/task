@@ -45,6 +45,16 @@
                     <div class="card-body">
                         <h5 class="card-title">{{ $task->name }}</h5>
                         <p class="card-text text-muted">{{ $task->description }}</p>
+                        @if ($task->status == 'done')
+                            <div class="alert alert-success mb-3">Statut actuel : <strong>✅ Terminée.</strong></div>
+                            
+                        @endif
+                        @if ($task->status == 'in_progress')
+                            <div class="alert alert-warning mb-3">Statut actuel : <strong>⏳ En cours.</strong></div>
+                        @endif
+                        @if ($task->status == 'pending')
+                            <div class="alert alert-info mb-3">Statut actuel : <strong>🔄 En attente.</strong></div>
+                        @endif
                         <div class="mb-2">Statut actuel : <strong>{{ ucfirst($task->status) }}</strong></div>
 
                         <div class="d-flex flex-wrap gap-2">
