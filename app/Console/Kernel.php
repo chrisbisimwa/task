@@ -14,10 +14,9 @@ class Kernel extends ConsoleKernel
     {
         // $schedule->command('inspire')->hourly();
 
-        \Log::info('Scheduling tasks...');
 
         $schedule->command('send:task-follow-up-links')
-        ->dailyAt('07:18')   // Tous les jours à 08h
+        ->dailyAt('07:00')   // Tous les jours à 08h
         ->when(function () {
             return !now()->isSunday(); // Sauf le dimanche
         });
