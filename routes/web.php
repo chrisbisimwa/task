@@ -28,7 +28,7 @@ Auth::routes();
 Route::get('/home', [HomeController::class, 'index'])->name('home');
 
 Route::get('/suivi/{token}', [SuiviController::class, 'show'])->name('suivi.show');
-Route::post('/suivi/{token}', [SuiviController::class, 'update']);
+/* Route::post('/suivi/{token}', [SuiviController::class, 'update']); */
 Route::post('/suivi/{token}', [SuiviController::class, 'submit'])->name('suivi.submit');
 Route::post('/tasks/{id}/update-progress', [SuiviController::class, 'updateProgress'])->name('tasks.updateProgress');
 

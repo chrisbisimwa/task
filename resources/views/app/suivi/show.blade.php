@@ -6,18 +6,18 @@
     <title>Suivi des Tâches - {{ $employee->name }}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('assets/favicon/favicon-32x32.png') }}">
-    <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('assets/favicon/favicon-32x32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('assets/favicon/favicon-16x16.png') }}">
     <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('assets/favicon/apple-touch-icon.png') }}">
 
-    <meta name="og:title" content="Suivi des Tâches - {{ $employee->name }}">
-    <meta name="og:description" content="Mise à jour des tâches de la semaine pour {{ $employee->name }}. Suivez l'avancement et gérez les tâches en cours.">
-    <meta name="og:image" content="{{ asset('assets/favicon/favicon-32x32.png') }}">
-    <meta name="og:url" content="{{ url()->current() }}">
-    <meta name="og:type" content="website">
-    <meta name="og:site_name" content="Suivi des Tâches">
-    <meta name="og:locale" content="fr_FR">
-    <meta name="og:locale:alternate" content="en_US">
-    
+    <meta property="og:title" content="Suivi des Tâches - {{ $employee->name }}">
+    <meta property="og:description"
+        content="Mise à jour des tâches de la semaine pour {{ $employee->name }}. Suivez l'avancement et gérez les tâches en cours.">
+    <meta property="og:image" content="{{ asset('assets/favicon/favicon-32x32.png') }}">
+    <meta property="og:url" content="{{ url()->current() }}">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Suivi des Tâches">
+    <meta property="og:locale" content="fr_FR">
+    <meta property="og:locale:alternate" content="en_US">
 
     <!-- Bootstrap 5 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -64,7 +64,7 @@
         }
 
         .progress-wrapper {
-            margin-bottom: 1rem;
+            margin-top: 0.5rem;
         }
     </style>
 </head>
@@ -73,12 +73,13 @@
     <div class="container py-4">
         <div class="text-center mb-4">
             <h2>Bonjour {{ $employee->name }}</h2>
-            <p class="text-muted">Tâches de la semaine {{ $currentWeek }} ({{$weekStart}} - {{$weekEnd}})</p>
+            <p class="text-muted">Tâches de la semaine {{ $currentWeek }} ({{ $weekStart }} - {{ $weekEnd }})
+            </p>
         </div>
 
-        @if (session('success'))
+       {{--  @if (session('success'))
             <div class="alert alert-success">{{ session('success') }}</div>
-        @endif
+        @endif --}}
 
         @if (session('error'))
             <div class="alert alert-danger">{{ session('error') }}</div>
@@ -87,6 +88,7 @@
         <form id="task-form" method="POST" action="{{ route('suivi.submit', $access->token) }}">
             @csrf
             <div class="board">
+                <!-- En attente -->
                 <div class="column">
                     <h4>🔄 En attente</h4>
                     <div id="pending" class="task-list">
@@ -98,6 +100,8 @@
                         @endforeach
                     </div>
                 </div>
+
+                <!-- En cours -->
                 <div class="column">
                     <h4>⏳ En cours</h4>
                     <div id="in_progress" class="task-list">
@@ -105,7 +109,6 @@
                             <div class="task-card" data-id="{{ $task->id }}">
                                 <strong>{{ $task->name }}</strong>
                                 <p class="mb-0 small text-muted">{{ $task->description }}</p>
-
                                 <div class="progress-wrapper" data-task-id="{{ $task->id }}">
                                     <label class="form-label small">Progression :
                                         <input type="number" min="0" max="100" step="5"
@@ -126,6 +129,8 @@
                         @endforeach
                     </div>
                 </div>
+
+                <!-- Fait -->
                 <div class="column">
                     <h4>✅ Fait</h4>
                     <div id="done" class="task-list">
@@ -141,9 +146,9 @@
 
             <input type="hidden" name="statuses" id="statuses">
 
-            <div class="text-center mt-4">
+            {{-- <div class="text-center mt-4">
                 <button type="submit" class="btn btn-primary">✅ Mettre à jour mes tâches</button>
-            </div>
+            </div> --}}
         </form>
     </div>
 
@@ -153,9 +158,26 @@
         lists.forEach(id => {
             new Sortable(document.getElementById(id), {
                 group: 'shared',
-                animation: 150
+                animation: 150,
+                onEnd: function() {
+                    autoSubmitStatuses();
+                }
             });
         });
+
+        function autoSubmitStatuses() {
+            const statusMap = {};
+            lists.forEach(status => {
+                const tasks = document.getElementById(status).querySelectorAll('.task-card');
+                tasks.forEach(task => {
+                    statusMap[task.dataset.id] = status;
+                });
+            });
+            document.getElementById('statuses').value = JSON.stringify(statusMap);
+
+            // Soumission automatique du formulaire
+            document.getElementById('task-form').submit();
+        }
 
         document.getElementById('task-form').addEventListener('submit', function(e) {
             const statusMap = {};
@@ -192,15 +214,12 @@
                 .then(response => response.json())
                 .then(data => {
                     if (progress >= 100) {
-                        // Déplacer automatiquement la tâche dans la colonne "Fait"
                         const card = document.querySelector(`.task-card[data-id='${taskId}']`);
                         const wrapper = document.querySelector(`.progress-wrapper[data-task-id='${taskId}']`);
                         const doneList = document.getElementById('done');
-                        if (card) {
+                        if (card && doneList) {
                             doneList.appendChild(card);
-                        }
-                        if (wrapper) {
-                            wrapper.remove();
+                            if (wrapper) wrapper.remove();
                         }
                     }
                 })
