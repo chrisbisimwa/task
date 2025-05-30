@@ -1,6 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
+
 <div class="container">
     <div class="card">
         <div class="card-body">
@@ -10,6 +11,8 @@
                 ></a>
                 @lang('crud.employees.show_title')
             </h4>
+
+            @livewire('employees.show', ['employeeId' => $employee->id])
 
             <div class="mt-4">
                 <div class="mb-4">

@@ -48,7 +48,7 @@ class TaskReminderNotification extends Notification
             ->line("Le système a détecté que vous avez " . count($this->tasks) . " tâche(s) non réalisée(s) cette semaine :");
 
         foreach ($this->tasks as $task) {
-            $message->line("- {$task->name}");
+            $message->line("- {$task->name} ({$task->progress}%)");
         }
 
         return $message
