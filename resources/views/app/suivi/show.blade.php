@@ -41,13 +41,17 @@
             border: 1px solid #dee2e6;
             border-radius: 8px;
             padding: 0.75rem;
-            margin-bottom: 0.75rem;
+            margin-bottom: 0.5rem;
             background-color: #f8f9fa;
             cursor: grab;
         }
 
         .task-card:hover {
             background-color: #e9ecef;
+        }
+
+        .progress-wrapper {
+            margin-bottom: 1rem;
         }
     </style>
 </head>
@@ -88,6 +92,23 @@
                             <div class="task-card" data-id="{{ $task->id }}">
                                 <strong>{{ $task->name }}</strong>
                                 <p class="mb-0 small text-muted">{{ $task->description }}</p>
+
+                                <div class="progress-wrapper" data-task-id="{{ $task->id }}">
+                                    <label class="form-label small">Progression :
+                                        <input type="number" min="0" max="100" step="5"
+                                            value="{{ $task->progress }}"
+                                            class="form-control form-control-sm d-inline-block w-auto"
+                                            onchange="submitProgress({{ $task->id }}, this.value)"
+                                            oninput="updateProgressValue({{ $task->id }}, this.value)">
+                                        %
+                                    </label>
+                                    <div class="progress mt-1">
+                                        <div id="progress-bar-{{ $task->id }}" class="progress-bar"
+                                            role="progressbar" style="width: {{ $task->progress }}%;"
+                                            aria-valuenow="{{ $task->progress }}" aria-valuemin="0"
+                                            aria-valuemax="100">{{ $task->progress }}%</div>
+                                    </div>
+                                </div>
                             </div>
                         @endforeach
                     </div>
@@ -123,7 +144,7 @@
             });
         });
 
-        document.getElementById('task-form').addEventListener('submit', function (e) {
+        document.getElementById('task-form').addEventListener('submit', function(e) {
             const statusMap = {};
             lists.forEach(status => {
                 const tasks = document.getElementById(status).querySelectorAll('.task-card');
@@ -133,6 +154,47 @@
             });
             document.getElementById('statuses').value = JSON.stringify(statusMap);
         });
+
+        function updateProgressValue(taskId, value) {
+            const progress = Math.min(Math.max(parseInt(value), 0), 100);
+            const bar = document.getElementById('progress-bar-' + taskId);
+            bar.style.width = progress + '%';
+            bar.innerText = progress + '%';
+            bar.setAttribute('aria-valuenow', progress);
+        }
+
+        function submitProgress(taskId, value) {
+            const progress = Math.min(Math.max(parseInt(value), 0), 100);
+
+            fetch(`/tasks/${taskId}/update-progress`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    },
+                    body: JSON.stringify({
+                        progress: progress
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (progress >= 100) {
+                        // Déplacer automatiquement la tâche dans la colonne "Fait"
+                        const card = document.querySelector(`.task-card[data-id='${taskId}']`);
+                        const wrapper = document.querySelector(`.progress-wrapper[data-task-id='${taskId}']`);
+                        const doneList = document.getElementById('done');
+                        if (card) {
+                            doneList.appendChild(card);
+                        }
+                        if (wrapper) {
+                            wrapper.remove();
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Erreur lors de la mise à jour du progrès :', error);
+                });
+        }
     </script>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

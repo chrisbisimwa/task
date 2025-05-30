@@ -67,9 +67,9 @@ class SuiviController extends Controller
         if (! $access) {
             return redirect()->back()->with('error', 'Lien expiré ou invalide.');
         }
-       
 
-       /*  if (! $access || $access->isValid()) {
+
+        /*  if (! $access || $access->isValid()) {
             return redirect()->back()->with('error', 'Lien expiré ou invalide.');
         } */
 
@@ -103,5 +103,27 @@ class SuiviController extends Controller
             DB::rollBack();
             return redirect()->back()->with('error', 'Une erreur est survenue lors de la mise à jour.');
         }
+    }
+
+    public function updateProgress(Request $request, $id)
+    {
+        $request->validate([
+            'progress' => 'required|integer|min:0|max:100',
+        ]);
+
+        $task = Task::findOrFail($id); 
+
+        $task->progress = $request->progress;
+
+        if ($request->progress >= 100) {
+            $task->status = 'done';
+            $task->progress = 100;
+        } elseif ($task->status === 'pending') {
+            $task->status = 'in_progress';
+        }
+
+        $task->save();
+
+        return response()->json(['status' => 'success']);
     }
 }

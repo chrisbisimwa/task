@@ -17,6 +17,7 @@ class Task extends Model
         'description',
         'status',
         'due_week',
+        'progress',
     ];
 
     protected $searchableFields = ['*'];
