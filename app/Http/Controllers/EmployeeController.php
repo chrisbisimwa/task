@@ -61,6 +61,7 @@ class EmployeeController extends Controller
     {
         $this->authorize('view', $employee);
 
+
         return view('app.employees.show', compact('employee'));
     }
 

@@ -42,7 +42,7 @@ class ReassignUnfinishedTasks extends Command
                 'employee_id' => $task->employee_id,
                 'name' => $task->name,
                 'description' => $task->description,
-                'status' => 'pending',
+                'status' => $task->status,
                 'due_week' => $thisWeek,
             ]);
             $count++;
