@@ -43,6 +43,7 @@ class ReassignUnfinishedTasks extends Command
                 'name' => $task->name,
                 'description' => $task->description,
                 'status' => $task->status,
+                'progress'=> $task->progress,
                 'due_week' => $thisWeek,
             ]);
             $count++;
