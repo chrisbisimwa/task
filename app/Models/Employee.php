@@ -13,9 +13,13 @@ class Employee extends Model
     use Searchable;
     use Notifiable;
 
-    protected $fillable = ['name', 'phone', 'email'];
+    protected $fillable = ['name', 'phone', 'email', 'notification_channels'];
 
     protected $searchableFields = ['*'];
+
+    protected $casts = [
+        'notification_channels' => 'array',
+    ];
 
     public function tasks()
     {

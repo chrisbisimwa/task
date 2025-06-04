@@ -1,66 +1,108 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Suivi Hebdomadaire des Tâches Employés
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Ce projet Laravel permet d’envoyer automatiquement des rappels aux employés pour le suivi de leurs tâches hebdomadaires, via WhatsApp, email (et d’autres canaux à venir). Il propose :
 
-## About Laravel
+- Génération de liens de suivi sécurisés et personnalisés
+- Suivi des accès aux liens et relances automatisées
+- Historique détaillé des notifications et des accès
+- Système de feedback employé après saisie
+- Interface d’administration avancée
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Fonctionnalités principales
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+- **Envoi automatique de notifications** (WhatsApp, email…) chaque semaine
+- **Lien de suivi unique** pour chaque employé, valable 24h (ou selon configuration)
+- **Historique complet** des notifications envoyées (succès/échecs, détail du canal…)
+- **Tableaux de bord admin** pour visualiser, filtrer, exporter tous les historiques
+- **Notifications personnalisées** selon le type de tâche ou le profil employé
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## Installation
 
-## Learning Laravel
+1. **Cloner le dépôt**
+   ```bash
+   git clone <url-du-repo>
+   cd <nom-du-repo>
+   ```
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+2. **Installer les dépendances**
+   ```bash
+   composer install
+   npm install && npm run dev
+   ```
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+3. **Configurer l’environnement**
+   - Copier `.env.example` en `.env`
+   - Remplir les variables nécessaires (base de données, WhatsApp, email…)
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+4. **Lancer les migrations**
+   ```bash
+   php artisan migrate
+   ```
 
-## Laravel Sponsors
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+6. **Configurer les notifications WhatsApp**
+   - Obtenir un token WhatsApp Business API
+   - Renseigner `WHATSAPP_TOKEN` et `WHATSAPP_PHONE_NUMBER_ID` dans `.env`
 
-### Premium Partners
+7. **(Optionnel) Installer Laravel Excel pour export**
+   ```bash
+   composer require maatwebsite/excel
+   ```
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[WebReinvent](https://webreinvent.com/)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Jump24](https://jump24.co.uk)**
-- **[Redberry](https://redberry.international/laravel/)**
-- **[Active Logic](https://activelogic.com)**
-- **[byte5](https://byte5.de)**
-- **[OP.GG](https://op.gg)**
+## Utilisation
 
-## Contributing
+- **Envoi des liens de suivi :**
+  ```bash
+  php artisan send:task-follow-up-links
+  ```
+  (À planifier en cron chaque semaine)
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+- **Relance automatique des employés n’ayant pas accédé**
+  ```bash
+  php artisan tasks:remind-unreached-employees
+  ```
 
-## Code of Conduct
+- **Tableaux de bord admin**
+  - Accéder à `/admin/notifications` pour l’historique des notifications
+  - Accéder à `/admin/access-tokens` pour la gestion des accès
+  - Accéder à `/admin/feedbacks` pour les retours des employés
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+## Structure des principales tables
 
-## Security Vulnerabilities
+- **employees** : informations collaborateurs
+- **tasks** : tâches hebdomadaires
+- **access_tokens** : liens sécurisés, suivi des accès
+- **notification_logs** : historique détaillé des notifications
+- **feedbacks** : retours/commentaires des employés
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+## Personnalisation
 
-## License
+- **Canaux de notification** : WhatsApp, email, SMS, Slack (extensible)
+- **Templates de messages personnalisables** (langue, format, contenu dynamique)
+- **Gestion des rappels selon le type de tâche ou le profil employé**
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+## Sécurité
+
+- Les liens de suivi sont valables temporairement et invalidés après usage ou expiration.
+- Accès admin protégé par authentification et middleware.
+- Toutes les actions sensibles sont tracées.
+
+## Roadmap (suggestions d’évolution)
+
+- Intégration d’autres canaux (SMS, Slack…)
+- Système de relance configurable (fréquence, nombre maximum…)
+- Statistiques avancées (taux d’accès, taux de complétion, satisfaction…)
+- Support multi-langues complet
+- API pour intégrations externes
+- **Suivi des accès** : qui a consulté ou non son lien
+- **Relances automatiques** pour les employés n’ayant pas accédé à leur lien
+- **Système de feedback** : commentaire et note à la fin du suivi par l’employé
+
+## Contribuer
+
+Les PR et suggestions sont les bienvenues. Merci de soumettre vos idées dans les issues GitHub.
+
+---
+
+**Auteur** : Christian BISIMWA
+**Licence** : MIT

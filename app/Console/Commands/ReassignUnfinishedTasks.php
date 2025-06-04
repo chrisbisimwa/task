@@ -38,6 +38,16 @@ class ReassignUnfinishedTasks extends Command
 
         DB::beginTransaction();
         foreach ($tasks as $task) {
+            // Vérification : la tâche existe-t-elle déjà pour cette semaine ?
+            $exists = Task::where('employee_id', $task->employee_id)
+                          ->where('name', $task->name)
+                          ->where('description', $task->description)
+                          ->where('due_week', $thisWeek)
+                          ->exists();
+
+            if ($exists) {
+                continue; // On évite la duplication
+            }
             Task::create([
                 'employee_id' => $task->employee_id,
                 'name' => $task->name,
@@ -45,6 +55,7 @@ class ReassignUnfinishedTasks extends Command
                 'status' => $task->status,
                 'progress'=> $task->progress,
                 'due_week' => $thisWeek,
+                'parent_task_id' => $task->id,
             ]);
             $count++;
         }

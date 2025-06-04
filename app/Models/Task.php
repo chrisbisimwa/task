@@ -18,6 +18,7 @@ class Task extends Model
         'status',
         'due_week',
         'progress',
+        'parent_task_id',
     ];
 
     protected $searchableFields = ['*'];
@@ -25,5 +26,26 @@ class Task extends Model
     public function employee()
     {
         return $this->belongsTo(Employee::class);
+    }
+
+    public function parentTask()
+    {
+        return $this->belongsTo(Task::class, 'parent_task_id');
+    }
+
+    public function childTasks()
+    {
+        return $this->hasMany(Task::class, 'parent_task_id');
+    }
+
+    public function overdueWeeksCount()
+    {
+        $count = 0;
+        $task = $this;
+        while ($task->parentTask) {
+            $count++;
+            $task = $task->parentTask;
+        }
+        return $count;
     }
 }

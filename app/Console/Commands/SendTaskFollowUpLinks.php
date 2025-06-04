@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use App\Models\Employee;
 use App\Models\AccessToken;
+use App\Models\NotificationLog;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Http;
@@ -40,26 +41,26 @@ class SendTaskFollowUpLinks extends Command
             return;
         }
 
-        $employees = Employee::all();
+        // Eager load uniquement les tâches concernées pour chaque employé
+        $employees = Employee::with(['tasks' => function ($query) {
+            $query->where('status', '!=', 'done')
+                ->where('due_week', now()->format('o-\WW'));
+        }])->get();
 
-        //delete old tokens
+        // Nettoyage des anciens tokens expirés
         AccessToken::where('expires_at', '<', now())->delete();
 
         foreach ($employees as $employee) {
-
-
-
-            $tasks = $employee->tasks()
-                ->where('status', '!=', 'done')
-                ->where('due_week', now()->format('o-\WW')) // Format: 2025-W22
-                ->get();
-
-
+            $tasks = $employee->tasks;
 
             if ($tasks->isEmpty()) {
                 continue; // Pas de tâches à notifier
             }
 
+            // Invalider tous les tokens actifs de l’employé avant de créer le nouveau
+            AccessToken::where('employee_id', $employee->id)
+                ->where('expires_at', '>', now())
+                ->delete();
 
             $token = Str::random(32);
 
@@ -71,22 +72,64 @@ class SendTaskFollowUpLinks extends Command
 
             $link = 'suivi/' . $token;
 
+            $taskList = $this->buildEmployeeTasks($employee, $tasks, $link);
 
+            // Gestion multicanal (WhatsApp, email)
+            $channels = $employee->notification_channels ?? ['whatsapp'];
+            foreach ($channels as $channel) {
+                $logData = [
+                    'employee_id' => $employee->id,
+                    'channel' => $channel,
+                    'sent_at' => now(),
+                    'payload' => null,
+                    'status' => 'success',
+                    'error_message' => null,
+                ];
 
-            $taskList = $this->buildEmployeeMessage($employee, $tasks, $link);
+                try {
+                    if ($channel === 'whatsapp') {
+                        $payload = $this->getWhatsAppPayload($employee, $taskList, $link, count($tasks));
+                        $logData['payload'] = $payload;
+                        $response = $this->sendWhatsAppMessage($employee->phone, $payload);
+                        if (!$response->successful()) {
+                            $logData['status'] = 'failed';
+                            $logData['error_message'] = $response->body();
+                        }
+                    } elseif ($channel === 'email') {
+                        try {
+                            $employee->notify(new TaskReminderNotification($employee, $tasks, url($link)));
+                            $logData['payload'] = [
+                                'subject' => "Suivi quotidien de vos tâches - " . now()->format('d/m/Y'),
+                                'message' => $this->buildEmployeeMessage($employee, $tasks, url($link)),
+                            ];
+                            // Vérifier si la notification a échoué via le système Laravel
+                            if (method_exists($employee->routeNotificationFor('mail'), 'failures')) {
+                                $failures = $employee->routeNotificationFor('mail')->failures();
+                                if (!empty($failures)) {
+                                    $logData['status'] = 'failed';
+                                    $logData['error_message'] = implode(', ', $failures);
+                                }
+                            }
+                        } catch (\Exception $e) {
+                            $logData['status'] = 'failed';
+                            $logData['error_message'] = $e->getMessage();
+                        }
+                        
+                    }
+                } catch (\Exception $e) {
+                    $logData['status'] = 'failed';
+                    $logData['error_message'] = $e->getMessage();
+                }
+                NotificationLog::create($logData);
+            }
 
-            $this->sendWhatsAppMessage($employee->phone, $taskList, $link, count($tasks), $employee->name);
-
-            //$employee->notify(new TaskReminderNotification($employee, $tasks, $link));
-
-            // TODO : envoyer le lien via WhatsApp ici
             $this->info("Lien envoyé à {$employee->name} : $link");
         }
     }
 
     private function buildEmployeeMessage($employee, $tasks, $link)
     {
-        /* $taskList = '';
+        $taskList = '';
         foreach ($tasks as $task) {
             $taskList .= $task->title . "\n"; // Ajoute chaque tâche avec un saut de ligne
         }
@@ -97,11 +140,56 @@ class SendTaskFollowUpLinks extends Command
         $message .= "Merci de mettre à jour le statut de ces tâches en cliquant sur le bouton ci-dessous.\n";
         $message .= $link;
 
-        return $message; */
+        return $message;
+
+       
+    }
+
+    protected function getWhatsAppPayload($employee, $taskList, $link, $taskCount)
+    {
+        return [
+            'messaging_product' => 'whatsapp',
+            'recipient_type' => 'individual',
+            'to' => $this->formatPhoneNumber($employee->phone),
+            'type' => 'template',
+            'template' => [
+                'name' => 'task_reminder', // Nom du template WhatsApp approuvé
+                'language' => ['code' => 'fr'],
+                'components' => [
+                    [
+                        'type' => 'body',
+                        'parameters' => [
+                            ['type' => 'text', 'text' => $employee->name],
+                            ['type' => 'text', 'text' => $taskCount],
+                            ['type' => 'text', 'text' => $taskList],
+                        ]
+                    ],
+                    [
+                        'type' => 'button',
+                        'sub_type' => 'url',
+                        'index' => 0,
+                        'parameters' => [
+                            ['type' => 'text', 'text' => $link]
+                        ]
+                    ]
+                ]
+            ]
+        ];
+    }
+
+     protected function sendWhatsAppMessage($to, $payload)
+    {
+        return Http::withToken(env('WHATSAPP_TOKEN'))
+            ->post("https://graph.facebook.com/v23.0/" . env('WHATSAPP_PHONE_NUMBER_ID') . "/messages", $payload);
+    }
+
+    private function buildEmployeeTasks($employee, $tasks, $link)
+    {
+       
 
         $taskList = '';
         foreach ($tasks as $index => $task) {
-            $taskList .= $task->name. ' (' . $task->progress . '%)'; 
+            $taskList .= $task->name . ' (' . $task->progress . '%)';
             if ($index < count($tasks) - 1) {
                 $taskList .= ' | '; // Séparateur entre les tâches
             }
@@ -110,64 +198,7 @@ class SendTaskFollowUpLinks extends Command
         return $taskList;
     }
 
-    protected function sendWhatsAppMessage($to, $taskList, $link, $taskCount, $employeeName )
-    {
 
-        $to = $this->formatPhoneNumber($to);
-
-   
-
-        /* $payload = [
-            'messaging_product' => 'whatsapp',
-            'recipient_type' => 'individual',
-            'to' => $to,
-            'type' => 'text',
-            'text' => [
-                'preview_url' => true, // Activez pour prévisualiser les liens
-                'body' => $message
-            ]
-        ]; */
-
-        $payload = [
-            'messaging_product' => 'whatsapp',
-            'recipient_type' => 'individual',
-            'to' => $to,
-            'type' => 'template',
-            'template' => [
-                'name' => 'task_reminder', // Nom du modèle approuvé
-                'language' => ['code' => 'fr'],
-                'components' => [
-                    [
-                        'type' => 'body',
-                        'parameters' => [
-                            ['type' => 'text', 'text' => $employeeName], // {{1}} : Nom
-                            ['type' => 'text', 'text' => $taskCount],   // {{2}} : Nombre de tâches
-                            ['type' => 'text', 'text' => $taskList],    // {{3}} : Liste des tâches
-                        ]
-                    ],
-                    [
-                        'type' => 'button',
-                        'sub_type' => 'url',
-                        'index' => 0,
-                        'parameters' => [
-                            ['type' => 'text', 'text' => $link] // {{4}} : Lien du bouton
-                        ]
-                    ]
-                ]
-            ]
-        ];
-
-        $response = Http::withToken(env('WHATSAPP_TOKEN'))
-            ->post("https://graph.facebook.com/v23.0/" . env('WHATSAPP_PHONE_NUMBER_ID') . "/messages", $payload);
-
-        if ($response->successful()) {
-            $this->info("Message envoyé à $to");
-        } else {
-            // Loguer les détails de l'erreur
-            \Log::error("Échec de l'envoi à $to : " . $response->body());
-            $this->error("Échec de l'envoi à $to : " . $response->status() . " - " . $response->body());
-        }
-    }
 
     private function formatPhoneNumber($phone)
     {
