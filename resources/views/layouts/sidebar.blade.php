@@ -3,7 +3,7 @@
     <!-- Brand Logo -->
     <a href="{{ url('/') }}" class="brand-link">
         <img src="{{ asset('assets/favicon/favicon-32x32.png') }}" alt="Vemto Logo" class="brand-image bg-white img-circle">
-        <span class="brand-text font-weight-light">task</span>
+        <span class="brand-text font-weight-light">Task Management</span>
     </a>
 
     <!-- Sidebar -->
