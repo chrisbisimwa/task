@@ -74,7 +74,7 @@
     }
 </style>
 @section('content')
-    @livewire('employees.show')
+    @livewire('Employees.show')
 
 
     {{-- <div class="container">
