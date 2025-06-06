@@ -20,7 +20,7 @@ use App\Http\Controllers\SuiviController;
 */
 
 Route::get('/', function () {
-   redirect('/home');
+   return redirect('/home');
 });
 
 Auth::routes();
