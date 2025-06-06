@@ -25,9 +25,10 @@ class Show extends Component
 
    
 
-    public function mount($employeeId)
+    public function mount()
     {
-        $this->employee = Employee::with('tasks')->findOrFail($employeeId);
+        
+        $this->employee = Employee::with('tasks')->findOrFail(request()->route('employee')->id);
         $this->loadTasks();
         $this->loadProgress();
         $this->loadHistory();
