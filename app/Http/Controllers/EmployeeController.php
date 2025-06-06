@@ -59,7 +59,7 @@ class EmployeeController extends Controller
      */
     public function show(Request $request, Employee $employee): View
     {
-        $this->authorize('view', $employee);
+        //$this->authorize('view', $employee);
 
 
         return view('app.employees.show', compact('employee'));
