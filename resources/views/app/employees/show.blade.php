@@ -74,7 +74,7 @@
     }
 </style>
 @section('content')
-    @livewire('employees.show', ['employeeId' => $employee->id])
+    @livewire('employees.show', ['employeeId' => $employeeId])
 
     
     {{-- <div class="container">

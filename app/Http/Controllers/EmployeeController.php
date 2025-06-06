@@ -60,10 +60,9 @@ class EmployeeController extends Controller
     public function show(Request $request, Employee $employee): View
     {
         $this->authorize('view', $employee);
-        dd($employee->id);
+        $employeeId = $employee->id;
 
-
-        return view('app.employees.show', compact('employee'));
+        return view('app.employees.show', compact('employeeId'));
     }
 
     /**
