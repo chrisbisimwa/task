@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Employee;
+use App\Models\Task;
+use Carbon\Carbon;
 use Illuminate\View\View;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
@@ -60,9 +62,52 @@ class EmployeeController extends Controller
     public function show(Request $request, Employee $employee): View
     {
         $this->authorize('view', $employee);
-        $employeeId = $employee->id;
 
-        return view('app.employees.show', compact('employeeId'));
+
+        $week = $request->input('week');
+        $status = $request->input('status');
+
+        // Base query
+        $tasksQuery = $employee->tasks()->orderBy('created_at', 'asc');
+
+        // Filtre par semaine si sélectionnée
+        if ($week !=='all' && $status == 'all') {
+            $tasksQuery->where('due_week', $week);
+        }
+ 
+        // Filtre par statut si sélectionné
+        if ($status !=='all' && $week == 'all') {
+            $tasksQuery->where('status', $status);
+        }
+
+        if ($week !=='all' && $status !=='all') {
+            // Filtre par semaine et statut si les deux sont sélectionnés
+            $tasksQuery->where('due_week', $week)
+                ->where('status', $status);
+        }   
+
+        $tasks = $tasksQuery->get();
+
+        // Liste des semaines où il y a des tâches (pour le filtre)
+        $allTasks = $employee->tasks()->get();
+        $weeks = $allTasks->groupBy(function ($task) {
+            return \Carbon\Carbon::parse($task->due_week)->format('o-\WW');
+        })->map(function ($group) {
+            $firstDueDate = \Carbon\Carbon::parse($group->first()->due_date);
+            return [
+                'semaine' => $firstDueDate->format('o-\WW'),
+                'start_date' => $firstDueDate->copy()->startOfWeek()->format('d-m-Y'),
+                'end_date' => $firstDueDate->copy()->endOfWeek()->format('d-m-Y'),
+                'tasks' => $group->count(),
+            ];
+        })->values();
+
+
+        return view('app.employees.show', compact(
+            'employee',
+            'tasks',
+            'weeks'
+        ));
     }
 
     /**
