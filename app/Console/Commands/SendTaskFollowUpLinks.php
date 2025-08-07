@@ -75,7 +75,7 @@ class SendTaskFollowUpLinks extends Command
             $taskList = $this->buildEmployeeTasks($employee, $tasks, $link);
 
             // Gestion multicanal (WhatsApp, email)
-            $channels = $employee->notification_channels ?? ['email'];
+            $channels = $employee->notification_channels ?? ['whatsapp'];
             foreach ($channels as $channel) {
                 $logData = [
                     'employee_id' => $employee->id,
